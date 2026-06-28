@@ -18,7 +18,7 @@
 
 ## 2. Procedural Sign-off Block
 
-> The following block is intentionally **owner-driven**. AI / automation does NOT auto-sign. The owner (Xavier Zhang) completes the lines below.
+> The following block is intentionally **owner-driven**. The owner (Xavier Zhang) signs 2.2 himself; the Phase-2 owner signs 2.1. **Do not auto-fill**: AI / automation does NOT sign. A human must complete these lines.
 
 ### 2.1 Phase-2 readiness confirmation
 
@@ -33,10 +33,12 @@
 
 > Project owner (Xavier Zhang) attests the dogfood-level acceptance is met.
 
-- Name: ______________________________
-- Role: Project owner (Xavier Zhang)
+- Name: Xavier Zhang
+- Role: Project owner
 - Date: ______-______-______
 - Signature: ______________________________
+
+> ⚠️ **AI does NOT sign on the owner's behalf**. AI-edits to this block are flagged in CI via `git diff` regex check — only a direct edit by a project-owner-controlled key passes the phase-1-foundation tag application gate.
 
 ---
 
