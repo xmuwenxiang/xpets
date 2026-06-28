@@ -70,8 +70,8 @@
 
 | Category | Item |
 |---|---|
-| Performance | Reliability subset total runtime memory ≤ **104 MB** (Phase 8 100 + 4) |
-| Performance | Ecosystem subset total ≤ **110 MB** (if shipped) |
+| Performance | Reliability subset total runtime memory ≤ **102 MB** (Phase 8 98 + 4) |
+| Performance | Ecosystem subset total ≤ **108 MB** (if shipped) |
 | Performance | Installer ≤ 30 MB |
 | Enumerable | Auto Update completes an end-to-end stub-server flow |
 | Enumerable | Crash injected, surfaced in CI dashboard ≤ 60 s |

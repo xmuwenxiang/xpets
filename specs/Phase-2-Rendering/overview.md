@@ -33,6 +33,23 @@ The fox is rendered using a fully PBR pipeline. Materials react to a directional
 
 ---
 
+## Future-Spec Reservations (orphaned no-op stubs)
+
+`spec-004-shadow.md` declared a `DPRenderer.ContactShadowToggle { enable, intensity }` no-op stub with a comment promising "Phase 5a implements the desktop-aware variant". As of Phase-2 closure (per `_audit-cross-ref.md` Dimension 5), **no Phase-5 Work Spec consumes this stub**, and there is no concrete plan to implement ContactShadow in any sibling Phase. Resolution:
+
+- **Post-Phase-9 roadmap item**: ContactShadow is *post-Phase-9*. Phase-2 ships the stub as a placeholder for forward-compatibility, and the stub is faithful zero-cost (no GPU / CPU overhead).
+- The Phase-2 stub remains in the public API; ADR is **not** required to retire it.
+- Concrete implementation lands under `spec-009-contact-shadow.md` if/when Phase-10 / post-Phase-9 picks it up.
+
+Similarly, `spec-005-hdr-post.md` declared a `DPRenderer.BloomPass` no-op stub. As of Phase-2 closure:
+
+- **Phase-8 defer**: BloomPass is *not* in Phase-8 Hardening's planned budget reductions (those target敾 8 MB from HDR format change alone). Post-Phase-9 roadmap item.
+- The Phase-2 stub remains in the public API; Phase-8 spec files make no reference.
+
+These are documented as **Future-Spec reservations** — not blocking Phase-2 / Phase-8 closure.
+
+---
+
 ## World Integration Reservation
 
 None required from Phase 2 (Phase 3 / Phase 4 own it per D-003).

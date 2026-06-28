@@ -82,7 +82,7 @@
 |---|---|
 | Performance | Profiler `.everyFrame` overhead ≤ 0.5 ms / frame (Phase-1 row 24, re-asserted) |
 | Performance | Cumulative Phase-5 memory delta ≤ 12 MB on top of Phase-4 baseline |
-| Performance | Total runtime memory worst-case ≤ **160 MB** (Phase 4 148 + Phase 5 12) |
+| Performance | Total runtime memory worst-case ≤ **154 MB** (Phase 4 142 + Phase 5 12) |
 | Enumerable | All SPEC-001..SPEC-004 §5 acceptance items pass |
 | Assertable | D-005 5a/5b split locked (decision documented in `spec-002`) |
 | Assertable | D-007 — Phase-5 owns AnimationDriver conformer count > 0; Phase-4 conformer count remains 0 |

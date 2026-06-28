@@ -66,7 +66,7 @@
 |---|---|
 | Performance | Profiler `.everyFrame` overhead ≤ 0.5 ms / frame (Phase-1 row 24, re-asserted) |
 | Performance | Cumulative Phase-4 memory delta ≤ 6 MB on top of Phase-3 baseline |
-| Performance | Total runtime memory worst-case ≤ **148 MB** (Phase 3 142 + Phase 4 6) |
+| Performance | Total runtime memory worst-case ≤ **142 MB** (Phase 3 136 + Phase 4 6) |
 | Enumerable | All SPEC-001..SPEC-004 §5 acceptance items pass |
 | Assertable | D-003 + D-007 reservation symbols (AnimationDriver protocol + `.noop`) reachable from any Phase-4 module |
 | Assertable | Phase-4 closure completes with `checklist.md` fully checked |

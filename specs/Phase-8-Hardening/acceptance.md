@@ -82,7 +82,7 @@
 
 | Category | Item |
 |---|---|
-| Performance | Total runtime memory worst-case ≤ **100 MB** (target; Phase-7 168 → Phase-8 100, −68 MB) |
+| Performance | Total runtime memory worst-case ≤ **98 MB** (target; Phase-7 166 → Phase-8 98, −68 MB) |
 | Performance | Mean CPU ≤ 5 %; P99 ≤ 8 % under stress |
 | Performance | GPU P99 ≤ 8 ms / frame |
 | Performance | Power draw ≤ 1.05 × macOS idle baseline |

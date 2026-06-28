@@ -125,7 +125,7 @@
 |---|---|
 | Performance | Profiler `.everyFrame` overhead ≤ 0.5 ms / frame (Phase-1 row 24, re-asserted) |
 | Performance | Cumulative Phase-7 memory delta ≤ 8 MB on top of Phase-6 baseline |
-| Performance | Total runtime memory worst-case ≤ **168 MB** (Phase 6 160 + Phase 7 8) |
+| Performance | Total runtime memory worst-case ≤ **166 MB** (Phase 6 158 + Phase 7 8) |
 | Enumerable | All SPEC-001..SPEC-008 §5 acceptance items pass |
 | Assertable | D-006 cross-deliverable proven: Phase-6 stub is now a real runtime |
 | Assertable | Phase-7 closure completes with `checklist.md` fully checked |

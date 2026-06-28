@@ -96,7 +96,7 @@
 |---|---|
 | Performance | Profiler `.everyFrame` ≤ 0.5 ms / frame (Phase-1 row 24) |
 | Performance | Cumulative Phase-6 memory delta ≤ 4 MB on top of Phase-5 baseline |
-| Performance | Total runtime memory worst-case ≤ **164 MB** (Phase 5 160 + Phase 6 4) |
+| Performance | Total runtime memory worst-case ≤ **158 MB** (Phase 5 154 + Phase 6 4) |
 | Enumerable | All SPEC-001..SPEC-007 §5 acceptance items pass |
 | Assertable | D-006 cross-deliverable stub-half proven: zero `DPBehavior`-owned concrete Skill conformers |
 | Assertable | Privacy default-deny list enforced at every Skill boundary |
