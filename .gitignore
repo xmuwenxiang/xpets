@@ -1,0 +1,42 @@
+# Swift Package Manager
+.build/
+.swiftpm/
+Packages/
+*.xcodeproj
+xcuserdata/
+*.xcworkspace
+!default.xcworkspace
+
+# macOS
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Build artifacts
+desktop-pet-core/.build/
+desktop-pet-core/.swiftpm/
+
+# Code analysis
+.codegraph/
+
+# Test fixtures (large binary assets used only in tests).
+# Keep the canonical Phase-1 fixture in source control so CI has it locally;
+# everything else (art asset roots) stays ignored to avoid checking in 100+ MB
+# of non-canonical binary data.
+desktop-pet-core/Tests/Fixtures/*.glb
+pets-models/*.glb
+# Force-include the canonical Phase-1 GLB fixture used by DPAssetTests.
+!desktop-pet-core/Tests/DPAssetTests/Fixtures/fox.glb
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

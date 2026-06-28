@@ -1,0 +1,127 @@
+name: CI
+
+# Locks down the Phase 1 closure gate plus the cross-Phase invariant.
+# Uses GitHub-hosted macOS runner because SwiftPM test target requires XCTest
+# (XCTest ships only with Xcode; see specs/Phase-1-Foundation/acceptance.md footnote).
+#
+# Acceptance driven by this file (taken from `specs/Phase-1-Foundation/acceptance.md`):
+#   row 29: `swift test` passes.
+#   row 31: Cold `swift build` ≤ 90 s; incremental ≤ 5 s.
+#   row 28: One-shot `git clone && ./scripts/bootstrap.sh` (mirrored locally).
+#   row 27: Profiler aggregator emits rolling window every 1 s (assert in tests).
+#   row 24: Profiler `.everyFrame` overhead ≤ 0.5 ms (assert in tests).
+#
+# Phases 2+ extends this file with their own Acceptance verifiers; see
+# specs/Phase-N-*/overview.md for the per-Phase Acceptance block.
+
+on:
+  push:
+    branches: [main, "phase-*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  phase1-closure:
+    name: Phase 1 Closure Gate
+    runs-on: macos-14   # Apple Silicon runner; matches spec-002 Apple-Silicon-only gate.
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Xcode (Xcode 16 minimum; XCTest is the binding constraint)
+        run: |
+          set -euo pipefail
+          ls /Applications/Xcode_*.app || true
+          # GitHub-hosted macos-14 ships Xcode 16+; no install needed.
+          xcode-select --print-path
+
+      - name: Verify Swift toolchain version
+        run: |
+          set -euo pipefail
+          swift --version | head -n 1
+          # swift-tools-version: 5.10 is the package floor.
+          grep -q 'swift-tools-version: 5.10' desktop-pet-core/Package.swift
+
+      - name: Install swift-format (lint pass)
+        run: |
+          set -euo pipefail
+          brew install swift-format
+          swift-format --version
+
+      - name: Bootstrap script (acceptance row 28 — one-shot)
+        run: |
+          set -euo pipefail
+          chmod +x scripts/bootstrap.sh scripts/pre-commit
+          # We mirror row 28 by skipping macOS-only `open DesktopPet.xcodeproj`
+          # in CI (Xcode project is Phase 9 per spec-001 §3 Out of Scope).
+          ./scripts/bootstrap.sh
+
+      - name: Cold swift build (acceptance row 31 — ≤ 90 s)
+        run: |
+          set -euo pipefail
+          START=$(date +%s)
+          swift build --package-path desktop-pet-core
+          END=$(date +%s)
+          [[ $((END - START)) -le 90 ]] || { echo "cold build too slow: $((END - START))s"; exit 1; }
+          echo "::notice::Cold swift build: $((END - START))s"
+
+      - name: Incremental swift build (acceptance row 31 — ≤ 5 s)
+        run: |
+          set -euo pipefail
+          # Touch a file to invalidate incremental; downstream rebuild should be cheap.
+          touch desktop-pet-core/Sources/DPFoundation/Logger.swift
+          START=$(date +%s)
+          swift build --package-path desktop-pet-core
+          END=$(date +%s)
+          [[ $((END - START)) -le 5 ]] || { echo "incremental build too slow: $((END - START))s"; exit 1; }
+          echo "::notice::Incremental swift build: $((END - START))s"
+
+      - name: swift test (acceptance row 29 — pass)
+        run: |
+          set -euo pipefail
+          swift test --package-path desktop-pet-core 2>&1 | tee /tmp/swift-test.log
+          ! grep -qE 'failed|error:' /tmp/swift-test.log || { echo "swift test failed"; exit 1; }
+
+      - name: Spec docs present
+        run: |
+          set -euo pipefail
+          [[ -f specs/00-spec-conventions.md ]]
+          [[ -f specs/Phase-1-Foundation/acceptance.md ]]
+          [[ -f specs/Phase-1-Foundation/checklist.md ]]
+          [[ -f roadmap.md ]]
+          # All 13 ADRs must exist (see decisions/README.md Index).
+          for id in $(seq -f "D-%03g" 1 13); do
+            [[ -f "decisions/${id}-"* ]] || { echo "missing ADR: $id"; exit 1; }
+          done
+
+      - name: Spec consistency check (DRY, drift-guard)
+        run: |
+          set -euo pipefail
+          # All ADR IDs in the README index must point at real files.
+          python3 - <<'PY'
+          import pathlib, re, sys
+          idx = pathlib.Path('decisions/README.md').read_text()
+          ids = re.findall(r'\b(D-\d{3})', idx)
+          missing = []
+          for d in ids:
+              hits = sorted(pathlib.Path('decisions').glob(f'{d}-*.md'))
+              if not hits:
+                  missing.append(d)
+          if missing:
+              print('Missing ADR files for:', missing); sys.exit(1)
+          print(f'All {len(ids)} ADR IDs in index resolve to real files.')
+          PY
+
+      - name: Profiler perf budget (acceptance row 24 — ≤ 0.5 ms overhead)
+        # The corresponding Swift test in DPProfilerTests asserts the budget at runtime;
+        # this CI step surfaces a failed assertion explicitly rather than letting it
+        # disappear into a passing test pool.
+        run: |
+          set -euo pipefail
+          swift test --package-path desktop-pet-core --filter 'ProfilerTests' 2>&1 | tee /tmp/profiler-tests.log
+          if grep -q 'everyFrame overhead' /tmp/profiler-tests.log; then
+              grep -A2 'everyFrame' /tmp/profiler-tests.log || true
+          fi

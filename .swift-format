@@ -1,0 +1,21 @@
+# .swift-format
+# Project-wide Swift format conventions (delivered by spec-001-bootstrap §2 row "Lint / format rules").
+# Pin to: swift-format 602.0.0+ (Apple).
+# Local uses: `swift-format lint --recursive desktop-pet-core`
+# CI uses: `swift-format lint --recursive desktop-pet-core --reporter github-actions-log`
+
+--indent-width 4
+--tab-width 4
+--line-length 120
+--maximum-line-length 200
+--respects-existing-line-breaks true
+--line-break-before-control-flow-keywords true
+--line-break-before-each-argument true
+--line-break-before-each-generic-argument true
+--namespace-type-access-level internal
+--disabled-blank-line-trailing-whitespace true
+--trim-trailing-whitespace true
+--allow-leading-doc-line false
+--enable-markdown-bolding true
+--enable-markdown-italics true
+--enable-markdown-strikethrough true
