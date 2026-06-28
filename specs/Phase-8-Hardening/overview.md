@@ -1,59 +1,86 @@
+<!--
+Status: Drafts authored (2026-06-28)
+Phase: 8 — Hardening
+Owner: TBD
+ADRs:  D-008 (Continuous Profiling baseline), D-009 (Phase → Hardening rename), D-013
+-->
+
 # Phase 8 — Hardening
 
-> **Status**: Stub — Phase 7 closure gating begins content authoring.
+> **Status**: Stub → **Drafts authored (2026-06-28)**. Six Work Specs now exist at Apple Style + 4-category Acceptance; implementation gated on owner review + `Status: Approved`.
 > **Goal**: Polish every system for production safety. CPU / GPU / Battery / Memory budgets become primary; Installer & distribution sizing honored.
 > **Primary Output**: Runtime ≤ 100 MB, Installer ≤ 30 MB.
 
 > **Renamed from "Optimization"** per **D-009**. Continuous Profiling was bootstrapped in Phase 1 (D-008) so this phase becomes a closing pass, not a rewriting pass.
 
-> ⚠️ **PLACEHOLDER — content authoring begins when Phase 7 closes.** Acceptance prose below is rewritten in 4-category form (D-013) at Phase 8 start.
-
 ---
 
-## Goal (Phase 8 final)
+## 1. Goal (Phase 8 final)
 
 The pet is production-grade: 60 FPS sustained with full Phase 1–7 capabilities on, idle CPU < 1 %, GPU ≤ 5 %, battery draw competitive with idle macOS, memory footprint pinned at < 100 MB, installer at < 30 MB.
 
----
-
-## Pre-known Deliverables (to be expanded)
-
-- `spec-001-frame-scheduler.md` — 60 / 30 / Idle Mode / Sleep Mode scheduling
-- `spec-002-cpu-budget.md` — CPU profiling-driven wins
-- `spec-003-gpu-budget.md` — GPU profiling-driven wins
-- `spec-004-memory-audit.md` — Resident memory sweep
-- `spec-005-battery-audit.md` — Power log analysis
-- `spec-006-installer-pipeline.md` — DMG / signed / notarized
-- `spec-007-debug-panel.md` — Full Debug Panel (replaces Phase 1 stub)
+After Phase 8 closes, all Phase-1..7 budgets hold under stress; an opt-in Production Build profile is documented; the installer is signed + notarized.
 
 ---
 
-## Out of Scope (Phase 8)
+## 2. Pre-known Deliverables (finalized)
 
-- ❌ New features — all features must be Phase 1–7 only
-- ❌ Cross-platform — Apple Silicon only
-- ❌ Auto Update — Phase 9
-
----
-
-## Risk (placeholder)
-
-- GPU profiling identifying unbounded draw calls
-- Memory fragmentation during long runtime (24 h test)
-- Battery cost when "Always Listening" or "Always Watching" features attempted (NOT planned per Privacy Spec)
+- [`spec-001-frame-scheduler.md`](spec-001-frame-scheduler.md) — 60 / 30 / Idle / Sleep frame-scheduling.
+- [`spec-002-cpu-budget.md`](spec-002-cpu-budget.md) — CPU profiling-driven wins.
+- [`spec-003-gpu-budget.md`](spec-003-gpu-budget.md) — GPU profiling-driven wins.
+- [`spec-004-memory-audit.md`](spec-004-memory-audit.md) — Resident memory sweep (target: bring 168 MB → < 100 MB).
+- [`spec-005-battery-audit.md`](spec-005-battery-audit.md) — Power-log analysis.
+- [`spec-006-installer-pipeline.md`](spec-006-installer-pipeline.md) — DMG / signed / notarized.
 
 ---
 
-## Acceptance (placeholder — 4 categories)
+## 3. Memory Reclamation Plan
 
-- Full Phase 1–7 enabled → 60 FPS sustained 5 min, P99 ≤ 18 ms
-- Memory ceiling ≤ 100 MB over 24 h soak
-- Battery draw ≤ baseline macOS idle + 5 % on M-series laptop
-- DMG signed + notarized; install size ≤ 30 MB
+Phase-7 worst-case ≈ 168 MB; target < 100 MB ⇒ reclaim ~70 MB. Strategies ordered by expected yield:
+
+| Strategy | Expected Yield |
+|---|---|
+| HDR framebuffer from `rgba16Float` → `rgba11Float` (HDR `b10a2`) | -8 MB |
+| Shadow cascade texture 2 cascades × 2048 → 1 cascade × 1024 default | -8 MB |
+| IBL cubemap mips: reduce by 1 level | -4 MB |
+| MemoryCache: 32 MB → 16 MB (Phase-1 spec-004) | -16 MB |
+| Animation buffers → GPU SkinningPipeline shared buffer | -8 MB |
+| MemoryStore WAL truncation at 7 days | -2 MB |
+| Phase-5 entity catalog truncation (in-memory 100 → 50) | -1 MB |
+| Phase-7 Skill registry → shared singletons | -1 MB |
+| Misc dedupe & lazy alloc (Phase-2/4/5/6 lazy alloc) | remaining |
+| **Total target** | **≥ 68 MB** |
+
+These are *targets*, not commitments. Implementation confirms at Phase-8 closure.
 
 ---
 
-## Cross-References
+## 4. Out of Scope (Phase 8)
 
-- Phase 1 Profiler surface used as canonical input
-- Phase 9 Telemetry may audit post-install behavior
+- ❌ New features — Phase 9+.
+- ❌ Multi-Pet cohabitation — out.
+- ❌ Vision Pro / AR — out.
+- ❌ Custom user-authored Skills — Phase 9 Marketplace.
+
+---
+
+## 5. Risk
+
+- **Reclamation aggressiveness** could destabilize behavior — Mitigation: each strategy is opt-in via `DPFoundation.Config`, default off in `DEBUG`, on in `RELEASE`.
+- **Signing / notarization blocking** — Mitigation: documented in `spec-006-installer-pipeline.md` with Apple Developer ID hooks.
+- **GPU budget overcorrection** — Mitigation: Phase-8 P99 stays in `Profiler.Counter` so regressions are observable.
+- **Compile-time STRIP / dSYM bloat** — Mitigation: the Profiler aggregator emits release-mode metrics that omit debug symbols.
+
+---
+
+## 6. Acceptance (placeholder — 4-category form finalized in `acceptance.md`)
+
+See [`acceptance.md`](acceptance.md). Cumulative Phase-8 memory delta: **−68 MB** target. Profiler `.everyFrame` overhead ≤ 0.5 ms / frame preserved. CI: green.
+
+---
+
+## 7. Cross-References
+
+- **Phase 1**: `spec-006-profiler.md` (the baseline Profiler reads).
+- **Phase 2..7**: every Work Spec's Performance metric row is the regression target.
+- **ADRs**: D-008, D-009, D-013.
