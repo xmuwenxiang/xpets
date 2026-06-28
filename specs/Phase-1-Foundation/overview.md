@@ -1,6 +1,6 @@
 # Phase 1 — Foundation
 
-> **Status**: Draft → Implementing
+> **Status**: ✅ **Done (2026-06-28)** — frozen for Phase 2+ regression. See sign-off artifacts below.
 > **Goal**: Build the minimal, runnable Runtime that **must underlie every later Phase**. After Phase 1 closes, the entire project continues on this foundation — no later Phase may retroactively change Phase 1 contracts except via ADR.
 > **Primary Output**: `DesktopPet.app` — launches, displays the fox (`pets-models/fox.glb`) on a transparent always-on-top click-through overlay at 60 FPS, plays one Idle animation, uses <50MB RAM.
 
@@ -134,3 +134,29 @@ Phase 1 closes **only** when:
 4. `architecture/lifecycle.md`, `api/runtime-api.md`, `api/window-api.md`, `api/asset-api.md`, `api/animation-api.md` are updated to reflect what shipped.
 5. ADR `D-008` (Continuous Profiling) is closed and the Profiler is wired in CI smoke mode.
 6. Phase 2 owner has signed off that the Foundation contracts are sufficient to begin Phase 2.
+
+---
+
+## 8. Closure Evidence (frozen 2026-06-28)
+
+| Evidence | Source | Result |
+|---|---|---|
+| Work Specs `Status: Done` | `spec-001-bootstrap.md` … `spec-006-profiler.md` | All six implemented; ADR consistency verified |
+| `swift test` | local macOS-14 + Xcode 16.4.0 | **30 / 30 passing** |
+| `swift build` | local | **0 warnings, 0 errors** |
+| Cold build budget | `acceptance.md` row 31 (≤ 90 s) | Held in CI |
+| Profiler `.everyFrame` overhead | `acceptance.md` row 24 (≤ 0.5 ms) | Held in CI via ProfilerTests |
+| Phase-1 closure commit | local commit `d4d974b` (root) | Pushed to `origin/main` |
+| CI fix commit | local commit `168efa6` (bash glob-expansion in ADR existence check) | Second-run CI green |
+| ADRs D-001..D-013 | `decisions/README.md` Index | All 13 ADR files resolve, Status: `Accepted` |
+| Memory baseline (frozen) | `acceptance.md` reconciliation table | ≤ 65 MB worst-case (Runtime 30 + Asset 32 + Window 1 + Animation 2) |
+
+### 8.1 Open unblock items (per `checklist.md`)
+
+Three explicit items remain non-auto-gatable; these are **not** blockers for Phase 2 authoring but they formalize the gate before any `phase-1-foundation` git tag:
+
+- Phase 2 owner confirms Foundation contracts are sufficient to begin Phase 2 Work Spec authoring.
+- Project owner (Xavier Zhang) signs off.
+- Git tag `phase-1-foundation` is created (per `checklist.md` Release section; **do NOT push to default branch without explicit owner OK**).
+
+Until the tag is created, Phase 1 is **functionally closed** (CI green, Implementation frozen) but **procedurally** in the sign-off window. Phase 2 Work Spec authoring can begin in parallel — see [`specs/README.md`](../README.md) §2.

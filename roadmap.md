@@ -122,3 +122,13 @@ Every Phase's `overview.md` closes with an Acceptance block obeying `00-spec-con
 ## 8. Status
 
 This roadmap is **Active**. It is amended only via ADRs in `decisions/`.
+
+---
+
+## 9. Phase Closure Log
+
+| Phase | Closed on | Closure commit / gate | Notes |
+|---|---|---|---|
+| **1 — Foundation** | **2026-06-28** | local `d4d974b` (root) pushed; CI `168efa6` (ADR-glob fix) gave second-run green | All Work Specs `Status: Done`. Frozen for Phase 2 regression. `checklist.md` Open items: Phase 2 owner readiness sign-off, Project owner sign-off, git tag `phase-1-foundation`. |
+
+> Phase 1 functional close vs procedural close: technical work (CI green, ADR consistency, perf budgets) closed on 2026-06-28. The three procedural items — Phase 2 owner readiness, Project owner (Xavier Zhang) sign-off, and git tag — are intentionally deferred to the next planning loop. Phase 2 Work Spec authoring can proceed in parallel; see `specs/README.md` §2 for current Phase status.
