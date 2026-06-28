@@ -40,3 +40,4 @@ pets-models/*.glb
 # Temporary files
 *.tmp
 *.temp
+.last-commit-message.txt
