@@ -28,7 +28,7 @@ For roadmap, decisions, and architecture, see the cross-repo roots:
 | # | Phase | Status | Overview | Closure Proof |
 |---|---|---|---|---|
 | 1 | Foundation | **Done (2026-06-28)** | [`Phase-1-Foundation/overview.md`](Phase-1-Foundation/overview.md) | [acceptance.md](Phase-1-Foundation/acceptance.md) + [checklist.md](Phase-1-Foundation/checklist.md) — committed `d4d974b`, CI green `168efa6` |
-| 2 | Rendering | Stub | [`Phase-2-Rendering/overview.md`](Phase-2-Rendering/overview.md) | Content authoring begins when Phase 1 closure gate fires. Acceptance prose is **placeholder** — rewrites into 4-category form at Phase 2 start. |
+| 2 | Rendering | 5 Work Specs **Draft** (2026-06-28) | [`Phase-2-Rendering/overview.md`](Phase-2-Rendering/overview.md) | Apple-Style + 4-category Acceptance drafted for spec-001..spec-005. Implementation gated on owner review + `Status: Approved` per `00-spec-conventions.md` §7. Cumulative Phase-2 memory budget target ≤ 128 MB worst-case (frozen for Phase-3/4/5 regression baselines). |
 | 3 | Physics | Stub | [`Phase-3-Physics/overview.md`](Phase-3-Physics/overview.md) | Same as Phase 2. Must carry **World Integration Reservation** (Collider-Edge) per D-003. |
 | 4 | Animation | Stub | [`Phase-4-Animation/overview.md`](Phase-4-Animation/overview.md) | Same. Must carry **World Integration Reservation** (Animation-Driver *signature only*; implementation cross-delivered by Phase 5 per D-007). IK scope fixed by D-012: Two-Bone / CCD / Foot / Look-At. |
 | 5 | DesktopWorld (5a + 5b) | Stub | [`Phase-5-DesktopWorld/overview.md`](Phase-5-DesktopWorld/overview.md) | Phase 5 internally splits (D-005). Owns the *real* implementation of the Animation-Driver hook reserved in Phase 4 (D-007). |
@@ -40,6 +40,7 @@ For roadmap, decisions, and architecture, see the cross-repo roots:
 ### 2.1 Status Legend
 
 - **Done** — All Work Specs `Status: Done`; checklist fully checked; CI green on the Phase closure commit; frozen for downstream regression.
+- **5 Work Specs Draft** — All planned deliverables have Apple-Style + 4-category Acceptance written; status tags in `[Draft, Draft, Draft, Draft, Draft]`; none has entered `In Review`. Implementation gated on owner review and `Status: Approved`.
 - **Stub** — `overview.md` is a *placeholder* with risk + pre-known deliverables sketched, but Work Spec files do not yet exist. Content authoring begins when the previous Phase closes.
 
 > Per `00-spec-conventions.md` §10, Phase directories must never be deleted; Done phases are **frozen** except for typo fixes via ADR.

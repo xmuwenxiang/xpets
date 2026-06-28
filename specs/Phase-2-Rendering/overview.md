@@ -1,10 +1,10 @@
 # Phase 2 — Rendering
 
-> **Status**: Stub — Phase 1 closure gating begins content authoring.
+> **Status**: Stub → **Drafts authored (2026-06-28)**. Five Work Specs now exist at Apple Style + 4-category Acceptance; none has entered `In Review`. Implementation does not begin until owner review + `Status: Approved` per `00-spec-conventions.md` §7.
 > **Goal**: Bring up the Metal renderer with PBR materials, lighting (Directional / IBL), Shadow, Camera, HDR Environment.
 > **Primary Output**: The same fox from Phase 1, now self-renders with physical realism — projected, reflective, rotatable, HDR-aware.
 
-> ⚠️ **PLACEHOLDER — content authoring begins when Phase 1 closes.** The Acceptance prose below violates `00-spec-conventions.md` §3.5 / D-013 (4 categories + objective measurability) on purpose: it will be rewritten in 4-category form when Phase 2 starts. Do NOT use the lines below as Acceptance for Phase 2 closure.
+> The five Draft Work Specs are below. Acceptance prose is **finalized** in 4-category form per D-013; numeric thresholds are owner-tunable at the Phase-2 kickoff.
 
 ---
 
