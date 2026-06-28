@@ -93,8 +93,12 @@ jobs:
           [[ -f specs/Phase-1-Foundation/checklist.md ]]
           [[ -f roadmap.md ]]
           # All 13 ADRs must exist (see decisions/README.md Index).
+          # NOTE: `[[ -f <glob> ]]` does NOT expand `*`; use `compgen -G` to verify
+          # at least one matching file exists per ADR id.
+          shopt -s nullglob
           for id in $(seq -f "D-%03g" 1 13); do
-            [[ -f "decisions/${id}-"* ]] || { echo "missing ADR: $id"; exit 1; }
+            matches=( "decisions/${id}-"*.md )
+            [[ ${#matches[@]} -ge 1 ]] || { echo "missing ADR: ${id}"; exit 1; }
           done
 
       - name: Spec consistency check (DRY, drift-guard)
