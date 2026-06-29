@@ -119,7 +119,7 @@ let package = Package(
         ),
         .testTarget(
             name: "DPRendererTests",
-            dependencies: ["DPRenderer", "DPProfiler", "DPFoundation"],
+            dependencies: ["DPRenderer", "DPProfiler", "DPFoundation", "DPRuntime"],
             path: "Tests/DPRendererTests"
         )
     ],

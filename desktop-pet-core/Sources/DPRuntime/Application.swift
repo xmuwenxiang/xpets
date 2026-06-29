@@ -61,32 +61,35 @@ public final class Application: @unchecked Sendable {
         // (1) Activation
         eventLoop.prepare()
 
-        // (2) Synchronous preload of the fox model — spec-005 acceptance wants determinism.
+        // (2) Create the Metal device BEFORE boot so FoxRenderModule can upload.
+        let device = MTLCreateSystemDefaultDevice()
+
+        // (3) Attach renderer view + prepare + wire counterSink.
+        let scale = window.attach(rendererView: renderer.hostView)
+        if let device {
+            renderer.prepare(device: device, scaleFactor: scale)
+        } else {
+            logger.warn("no Metal device available — running with software fallback")
+        }
+        renderer.passGraph.counterSink = { name, value in
+            Profiler.shared.record(DPProfiler.Counter(name: name, value: value))
+        }
+
+        // (4) Register modules + boot. FoxRender depends on AssetPreload (fox loaded first).
         do {
             try moduleManager.register(RenderMeshModule(passGraph: renderer.passGraph))
             try moduleManager.register(AssetPreloadModule(url: URL(fileURLWithPath: config.assets.foxGLBPath),
-                                                          loader: assetLoader,
-                                                          scene: scene,
-                                                          application: self))
+                                                          loader: assetLoader, scene: scene, application: self))
+            if let device {
+                try moduleManager.register(FoxRenderModule(device: device, scene: scene, passGraph: renderer.passGraph))
+            }
             try moduleManager.bootAll(ctx: ctx)
         } catch {
             logger.error("boot failure: \(error)")
             return
         }
 
-        // (3) Attach renderer view to the window.
-        let scale = window.attach(rendererView: renderer.hostView)
-        if let device = MTLCreateSystemDefaultDevice() {
-            renderer.prepare(device: device, scaleFactor: scale)
-        } else {
-            logger.warn("no Metal device available — running with software fallback")
-        }
-
-        renderer.passGraph.counterSink = { name, value in
-            Profiler.shared.record(DPProfiler.Counter(name: name, value: value))
-        }
-
-        // (4) Start the frame loop.
+        // (5) Start the frame loop.
         updateLoop.start()
         didBoot = true
         logger.info("Application boot took \(Int((CFAbsoluteTimeGetCurrent() - bootTime) * 1000))ms")

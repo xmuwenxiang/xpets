@@ -1,7 +1,11 @@
 import XCTest
 import Metal
 import simd
+import DPFoundation
 import DPRenderer
+import DPRuntime
+import DPAsset
+import DPProfiler
 
 final class MaterialPassDeviceTests: XCTestCase {
     private func skipUnlessGPU() throws {
@@ -48,5 +52,29 @@ final class MaterialPassDeviceTests: XCTestCase {
         enc.endEncoding()
         buffer.commit()
         // No crash = pass.
+    }
+}
+
+final class FoxRenderModuleDeviceTests: XCTestCase {
+    private func skipUnlessGPU() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["XPETS_GPU_TESTS"] != nil,
+                          "GPU test — set XPETS_GPU_TESTS=1 locally (skipped on CI)")
+    }
+
+    func testFoxRenderModuleBootsAndRegistersPass() throws {
+        try skipUnlessGPU()
+        guard let device = MTLCreateSystemDefaultDevice() else { try XCTSkip("no device"); return }
+        let url = URL(fileURLWithPath: "/Users/zcy/Documents/Workspace/MyProjects/agents/xpets/desktop-pet-core/Tests/DPAssetTests/Fixtures/fox.glb")
+        let glb = try GLBDecoder.decode(url: url)
+        let scene = Scene(renderer: RendererMock(), profiler: Profiler.shared, camera: Camera())
+        scene.assetRegistry.register(.glb(glb), key: AssetKey(hash: "fox"))
+        let renderer = RendererMock()
+        let mod = FoxRenderModule(device: device, scene: scene, passGraph: renderer.passGraph)
+        let ctx = RuntimeContext(config: DesktopPetConfig.default, logger: Logger.shared)
+        try mod.moduleWillBoot(ctx)
+        try mod.moduleDidBoot(ctx)
+        XCTAssertTrue(renderer.passGraph.registeredPassIDs.contains(RenderPassId("material")))
+        try mod.moduleWillTick(ctx, dt: 1.0/60)
+        try mod.moduleDidTick(ctx, dt: 1.0/60)
     }
 }
