@@ -175,4 +175,53 @@ public final class Renderer: @unchecked Sendable {
         guard !isRunning else { return }
         self.commandQueue = device.makeCommandQueue()
     }
+
+    /// Register a pass. Only legal before the first tick (module-boot window).
+    /// `after` anchors insertion immediately after the named pass; nil appends.
+    public func registerPass<P: RenderPass>(
+        _ pass: P,
+        context: P.Context,
+        after anchor: RenderPassId? = nil
+    ) throws {
+        guard !isRunning else { throw RendererError.alreadyRunning }
+        let id = pass.id
+        guard !passes.contains(where: { $0.id == id }) else {
+            throw RendererError.duplicatePassID(id)
+        }
+        let box = AnyRenderPass(pass, context: context)
+        if let anchor, let idx = passes.firstIndex(where: { $0.id == anchor }) {
+            passes.insert(box, at: idx + 1)
+        } else {
+            passes.append(box)
+        }
+    }
+
+    /// Schedule removal; the box is released on the next tick (present-tick drain)
+    /// so no use-after-free mid-frame.
+    public func unregisterPass(id: RenderPassId) {
+        pendingRemovals.insert(id)
+    }
+
+    /// Advance one frame. Increments currentFrameIndex, flips isRunning, drains
+    /// pending removals, encodes passes into `commandBuffer` if provided, emits
+    /// a Counter per pass via `counterSink`, and drops any pass that threw.
+    public func tick(dt: Double, into commandBuffer: MTLCommandBuffer? = nil) {
+        if !pendingRemovals.isEmpty {
+            passes.removeAll { pendingRemovals.contains($0.id) }
+            pendingRemovals.removeAll()
+        }
+        currentFrameIndex &+= 1
+        isRunning = true
+        for box in passes {
+            if let cb = commandBuffer {
+                do { _ = try box.encode(into: cb) }
+                catch { pendingDrops.insert(box.id) }
+            }
+            counterSink?(box.gpuLabel, 0)
+        }
+        if !pendingDrops.isEmpty {
+            passes.removeAll { pendingDrops.contains($0.id) }
+            pendingDrops.removeAll()
+        }
+    }
 }
