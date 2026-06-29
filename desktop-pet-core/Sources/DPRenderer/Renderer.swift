@@ -134,3 +134,45 @@ public final class RendererMock: RendererSurface {
         framesRendered = 0
     }
 }
+
+// MARK: - Phase 2 Pass Graph
+
+public enum RendererError: Error, Equatable {
+    case alreadyRunning
+    case duplicatePassID(RenderPassId)
+}
+
+/// Production renderer entry path. Owns the ordered pass list, the per-frame
+/// index, and (when a device is attached) the Metal command queue. Constructible
+/// without an MTLDevice for headless CI logic tests.
+public final class Renderer: @unchecked Sendable {
+    private let device: MTLDevice?
+    private var commandQueue: MTLCommandQueue?
+
+    public private(set) var currentFrameIndex: UInt64 = 0
+    public private(set) var isRunning = false
+
+    private var passes: [AnyRenderPass] = []
+    private var pendingRemovals: Set<RenderPassId> = []
+    private var pendingDrops: Set<RenderPassId> = []
+
+    /// Snapshot of registered pass IDs in stable execution order.
+    public var registeredPassIDs: [RenderPassId] { passes.map { $0.id } }
+
+    /// Injected counter sink. The Runtime wires this to `Profiler.shared.record`
+    /// (Renderer cannot import DPProfiler — DPProfiler already depends on
+    /// DPRenderer, so a direct call would be a circular dependency).
+    public var counterSink: ((String, Double) -> Void)?
+
+    public init(device: MTLDevice? = nil) {
+        self.device = device
+        self.commandQueue = device?.makeCommandQueue()
+    }
+
+    /// Attach a real device post-init (used by Phase1Renderer.prepare, which runs
+    /// after module-boot). No-op once the Renderer has started ticking.
+    public func attach(device: MTLDevice) {
+        guard !isRunning else { return }
+        self.commandQueue = device.makeCommandQueue()
+    }
+}

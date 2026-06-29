@@ -116,6 +116,11 @@ let package = Package(
             name: "DPProfilerTests",
             dependencies: ["DPProfiler", "DPFoundation"],
             path: "Tests/DPProfilerTests"
+        ),
+        .testTarget(
+            name: "DPRendererTests",
+            dependencies: ["DPRenderer", "DPProfiler", "DPFoundation"],
+            path: "Tests/DPRendererTests"
         )
     ],
     swiftLanguageVersions: [.v5]
