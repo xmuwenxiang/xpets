@@ -40,6 +40,21 @@ final class GLBDecoderTests: XCTestCase {
         }
     }
 
+    func testDecodeFixture_parsesMaterialAndImage() throws {
+        let asset = try GLBDecoder.decode(url: testFixtureURL())
+        XCTAssertEqual(asset.materials.count, 1, "fox.glb has exactly one material")
+        let m = asset.materials[0]
+        XCTAssertEqual(m.name, "fox_material")
+        XCTAssertEqual(m.albedoImageIndex, 0, "albedo baseColorTexture → image 0")
+        XCTAssertEqual(m.metallicFactor, 0)
+        XCTAssertEqual(m.roughnessFactor, 0.58, accuracy: 0.001)
+        XCTAssertNil(m.normalImageIndex, "fox has no normal map")
+        XCTAssertEqual(asset.images.count, 1, "fox.glb has one decoded image")
+        XCTAssertGreaterThan(asset.images[0].rgba.count, 0, "PNG decoded to non-empty pixels")
+        XCTAssertGreaterThan(asset.images[0].width, 0)
+        XCTAssertGreaterThan(asset.images[0].height, 0)
+    }
+
     private func testFixtureURL() -> URL {
         // Bundle.module exposes the test target's resources directory if any.
         // Ponytail: the canonical fixture location is `Tests/DPAssetTests/Fixtures/fox.glb`,

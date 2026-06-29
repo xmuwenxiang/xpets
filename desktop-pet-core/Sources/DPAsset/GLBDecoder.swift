@@ -83,6 +83,9 @@ public enum GLBDecoder {
         let accessors = (root["accessors"] as? [[String: Any]]) ?? []
         let bufferViews = (root["bufferViews"] as? [[String: Any]]) ?? []
         let anims = (root["animations"] as? [[String: Any]]) ?? []
+        let materialsJSON = (root["materials"] as? [[String: Any]]) ?? []
+        let texturesJSON = (root["textures"] as? [[String: Any]]) ?? []
+        let imagesJSON = (root["images"] as? [[String: Any]]) ?? []
 
         // -------- Skeleton --------
         // Materialize from the first skin we encounter. The Spec-005 fixture ships exactly one.
@@ -209,7 +212,37 @@ public enum GLBDecoder {
             animations.append(AnimationData(name: name, duration: maxTime, channels: chans, looping: looping))
         }
 
-        return GLBAsset(mesh: mesh, skeleton: skeleton, animations: animations, textures: [])
+        // -------- Materials + Images (2a) --------
+        var materials: [MaterialData] = []
+        for (i, m) in materialsJSON.enumerated() {
+            let name = (m["name"] as? String) ?? "material_\(i)"
+            let pbr = (m["pbrMetallicRoughness"] as? [String: Any]) ?? [:]
+            let metallicFactor = Float((pbr["metallicFactor"] as? Double) ?? 0)
+            let roughnessFactor = Float((pbr["roughnessFactor"] as? Double) ?? 1)
+            var albedoImageIndex: Int? = nil
+            if let bct = pbr["baseColorTexture"] as? [String: Any],
+               let texIdx = bct["index"] as? Int,
+               texIdx < texturesJSON.count {
+                albedoImageIndex = texturesJSON[texIdx]["source"] as? Int
+            }
+            materials.append(MaterialData(name: name, albedoImageIndex: albedoImageIndex,
+                                          metallicFactor: metallicFactor, roughnessFactor: roughnessFactor))
+        }
+
+        var images: [DecodedImage] = []
+        for im in imagesJSON {
+            guard let bvIdx = im["bufferView"] as? Int, bvIdx < bufferViews.count else { continue }
+            let bv = bufferViews[bvIdx]
+            let offset = (bv["byteOffset"] as? Int) ?? 0
+            let length = (bv["byteLength"] as? Int) ?? 0
+            let end = offset + length
+            guard length > 0, end <= bin.count else { continue }
+            let imgData = bin.subdata(in: offset..<end)
+            if let decoded = PNGDecoder.decode(imgData) { images.append(decoded) }
+        }
+
+        return GLBAsset(mesh: mesh, skeleton: skeleton, animations: animations, textures: [],
+                        materials: materials, images: images)
     }
 
     // MARK: - Helpers
