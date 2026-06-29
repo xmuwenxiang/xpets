@@ -63,7 +63,7 @@ public final class Application: @unchecked Sendable {
 
         // (2) Synchronous preload of the fox model — spec-005 acceptance wants determinism.
         do {
-            try moduleManager.register(RenderMeshModule())
+            try moduleManager.register(RenderMeshModule(passGraph: renderer.passGraph))
             try moduleManager.register(AssetPreloadModule(url: URL(fileURLWithPath: config.assets.foxGLBPath),
                                                           loader: assetLoader,
                                                           scene: scene,
@@ -80,6 +80,10 @@ public final class Application: @unchecked Sendable {
             renderer.prepare(device: device, scaleFactor: scale)
         } else {
             logger.warn("no Metal device available — running with software fallback")
+        }
+
+        renderer.passGraph.counterSink = { name, value in
+            Profiler.shared.record(DPProfiler.Counter(name: name, value: value))
         }
 
         // (4) Start the frame loop.
@@ -188,12 +192,19 @@ final class TerminableDelegate: NSObject, NSApplicationDelegate, @unchecked Send
 
 // MARK: - Phase 1 Modules
 
-/// RenderMeshModule — Phase 1 placeholder; pass registration lands in Phase 2.
+/// RenderMeshModule — registers the default root ClearPass during the module-boot
+/// window (Phase 2 spec-001). Real PBR passes land in spec-002+.
 final class RenderMeshModule: RuntimeModule {
     let name = "RenderMesh"
     let dependencies: [String] = []
+    private let passGraph: DPRenderer.Renderer
+    init(passGraph: DPRenderer.Renderer) { self.passGraph = passGraph }
     func moduleWillBoot(_ ctx: RuntimeContext) {}
-    func moduleDidBoot(_ ctx: RuntimeContext) {}
+    func moduleDidBoot(_ ctx: RuntimeContext) {
+        // Phase 2 spec-001: register the default root ClearPass during the
+        // module-boot window (registration is illegal after the first tick).
+        try? passGraph.registerPass(DPRenderer.ClearPass(), context: ())
+    }
     func moduleWillTick(_ ctx: RuntimeContext, dt: Double) {}
     func moduleDidTick(_ ctx: RuntimeContext, dt: Double) {}
     func moduleWillShutdown(_ ctx: RuntimeContext) {}

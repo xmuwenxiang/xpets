@@ -10,6 +10,10 @@ public protocol RendererSurface: AnyObject {
     /// The view to plug into the window's content.
     var hostView: NSView { get }
 
+    /// The pass-graph owner (Phase 2). Shells expose their inner Renderer so
+    /// modules can register passes during the module-boot window.
+    var passGraph: Renderer { get }
+
     /// Called once after view attachment to set up Metal pipeline objects.
     func prepare(device: MTLDevice, scaleFactor: Double)
 
@@ -28,6 +32,7 @@ public final class Phase1Renderer: NSObject, RendererSurface, MTKViewDelegate {
     public private(set) var prepared = false
     private var device: MTLDevice?
     private var commandQueue: MTLCommandQueue?
+    public let passGraph = Renderer(device: nil)
     private var frameCount: Int = 0
     private let onFrameDrawn: ((Double) -> Void)?
     private var lastFrameTimestamp: CFTimeInterval = 0
@@ -45,6 +50,7 @@ public final class Phase1Renderer: NSObject, RendererSurface, MTKViewDelegate {
         if prepared { return }
         self.device = device
         self.commandQueue = device.makeCommandQueue()
+        passGraph.attach(device: device)
         self._mtkView.device = device
         self._mtkView.framebufferOnly = true
         self._mtkView.colorPixelFormat = .bgra8Unorm
@@ -59,6 +65,7 @@ public final class Phase1Renderer: NSObject, RendererSurface, MTKViewDelegate {
 
     public func renderFrame(into view: MTKView, dt: Double) {
         guard prepared else { return }
+        passGraph.tick(dt: dt, into: nil)
         guard let queue = commandQueue,
               let buffer = queue.makeCommandBuffer(),
               let pass = view.currentRenderPassDescriptor else {
@@ -115,6 +122,7 @@ public final class Phase1Renderer: NSObject, RendererSurface, MTKViewDelegate {
 /// integration tests can assert per-tick render call counts.
 public final class RendererMock: RendererSurface {
     public let hostView: NSView
+    public let passGraph = Renderer(device: nil)   // headless, for Application/Scene tests
     public private(set) var framesRendered = 0
     public var scaleFactorOnPrepare: Double = 1.0
 
