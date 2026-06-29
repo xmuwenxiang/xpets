@@ -86,3 +86,4 @@
 > Filled during Round 2 implementation, per spec. Each entry: fixture, command, recorded value, pass/fail. Not CI-gated.
 >
 > Format: `| spec | item # | command | recorded | status |`
+| spec-002b | (fox visible) | `swift run --package-path desktop-pet-core desktop-pet` (interactive) + `screencapture` + pixel analysis | fox textured on overlay (137 distinct colors, 33.6% non-sea-blue pixels in 320×320 overlay — not a flat block) | local green |

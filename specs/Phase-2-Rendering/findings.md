@@ -34,6 +34,21 @@
 | Phase-1 acceptance "decoder output unchanged" | 2a adds fields additively. fox fixture test gains NEW assertions; existing assertions untouched. | Regression-as-correction — Phase-1 decoder was intentionally minimal. |
 | Minor: `readPositions`/`readTexcoords` bounds | These helpers do not guard `bvIdx < bufferViews.count` (only `readIndices` does). Crash risk only on malformed glTF referencing a non-existent bufferView. | Deferred hardening; fox.glb is well-formed. |
 
+## spec-002b (vertex pipeline + basic render)
+
+| Spec text / expectation | Code reality | Rationale |
+|---|---|---|
+| spec-002 `MaterialPass` encodes into a command buffer | `RenderPass.encode(into: MTLRenderCommandEncoder, ...)` — the shell (Phase1Renderer) owns the encoder (view rpd + clear + present); passes encode into it. spec-001's `encode(into: MTLCommandBuffer)` evolved. | Correct Metal pattern; spec-001's command-buffer form was an idealized stub. spec-001 device tests + TestPass updated. |
+| Shader compilation | `MTLDevice.makeLibrary(source:options:)` at runtime; vertex + fragment compiled as SEPARATE libraries (each defines its own `VertexOut` — no concatenation/redefinition). | SwiftPM doesn't compile `.metal`; runtime string keeps `swift test`/CI intact. Separate libraries avoid the VertexOut redefinition error. |
+| spec-002 `SkinnedMesh` renderable | fox.glb is NON-INDEXED (no `indices` key, 2a finding). `MaterialPass` uses `drawPrimitives` (not `drawIndexedPrimitives`). | 2a finding carried forward. |
+| spec-002 PBR / lighting | 2b is UNLIT (no normals, no lighting). fox.glb has no NORMAL attribute. | Defer PBR + normal computation to 2c. |
+| spec-002 GPU skinning | 2b renders bind-pose (static). `AnimationState.skinningPose` ignored. | Defer GPU skinning to 2c. |
+| Application boot order (spec-003) | Device creation moved BEFORE `bootAll` (was after). | FoxRenderModule needs the device at `moduleDidBoot` to upload Metal resources. |
+| Phase-1 `Camera` (position/target only) | 2b adds `viewMatrix()` (lookAt, right-handed) + `projectionMatrix(aspect:)` (Metal perspective, NDC z∈[0,1]) + fov/near/far. | Needed for the vertex shader MVP. |
+| `Material.fromGlb` / `MaterialPass` cross-module | `MaterialPass` in DPRenderer (renderer-primitive handles); scene→Metal conversion in `FoxRenderModule` (DPRuntime). | DPRenderer is below DPAsset/DPRuntime — same cross-module pattern as `Material.fromGlb` (2a). |
+| PNG decode Y origin | PNGDecoder's CGContext has bottom-left origin; vertex shader flips V (`1.0 - texcoord.y`). | Compensate for image-origin vs UV-origin; tunable per visual. |
+| Per-frame MVP | `MaterialPassContext` captured at registration (static); per-frame MVP via a shared uniform `MTLBuffer` updated by `FoxRenderModule.moduleDidTick` each tick. | spec-001's RenderPass.Context is registration-time; per-frame data needs a separate channel. |
+
 ## Acceptance evidence (local M4 baselines)
 
 | spec | item # | command | recorded | status |
