@@ -24,13 +24,18 @@ public struct GLBAsset: @unchecked Sendable {
     public var mesh: SkinnedMesh
     public var skeleton: SkeletonData
     public var animations: [AnimationData]
-    public var textures: [URL]   // textures may be deferred-decoded
+    public var textures: [URL]               // textures may be deferred-decoded
+    public var materials: [MaterialData] = [] // NEW (2a)
+    public var images: [DecodedImage] = []    // NEW (2a, PNG-decoded)
 
-    public init(mesh: SkinnedMesh, skeleton: SkeletonData, animations: [AnimationData], textures: [URL]) {
+    public init(mesh: SkinnedMesh, skeleton: SkeletonData, animations: [AnimationData], textures: [URL],
+                materials: [MaterialData] = [], images: [DecodedImage] = []) {
         self.mesh = mesh
         self.skeleton = skeleton
         self.animations = animations
         self.textures = textures
+        self.materials = materials
+        self.images = images
     }
 }
 
@@ -65,12 +70,19 @@ public struct SkinnedMesh: @unchecked Sendable {
     public var indexCount: Int
     public var jointIndices: [SIMD4<UInt16>]   // length == vertexCount
     public var jointWeights: [SIMD4<Float>]    // length == vertexCount
+    public var positions: [SIMD3<Float>] = []   // NEW (2a)
+    public var texcoords: [SIMD2<Float>] = []   // NEW (2a)
+    public var indices: [UInt32] = []           // NEW (2a)
 
-    public init(vertexCount: Int, indexCount: Int, jointIndices: [SIMD4<UInt16>], jointWeights: [SIMD4<Float>]) {
+    public init(vertexCount: Int, indexCount: Int, jointIndices: [SIMD4<UInt16>], jointWeights: [SIMD4<Float>],
+                positions: [SIMD3<Float>] = [], texcoords: [SIMD2<Float>] = [], indices: [UInt32] = []) {
         self.vertexCount = vertexCount
         self.indexCount = indexCount
         self.jointIndices = jointIndices
         self.jointWeights = jointWeights
+        self.positions = positions
+        self.texcoords = texcoords
+        self.indices = indices
     }
 }
 
@@ -159,5 +171,38 @@ public struct ShaderAsset: @unchecked Sendable {
     public init(sourceHash: String, sourcePath: String) {
         self.sourceHash = sourceHash
         self.sourcePath = sourcePath
+    }
+}
+
+/// A decoded image (RGBA8). Phase 2a decodes GLB-embedded PNGs into this;
+/// MTLTexture upload lands in 2b.
+public struct DecodedImage: Sendable, Equatable {
+    public let rgba: [UInt8]
+    public let width: Int
+    public let height: Int
+    public init(rgba: [UInt8], width: Int, height: Int) {
+        self.rgba = rgba; self.width = width; self.height = height
+    }
+}
+
+/// glTF material data parsed by GLBDecoder (no Metal). albedo/normal/ao/emissive
+/// are image indices into GLBAsset.images (optional — fox.glb has only albedo).
+public struct MaterialData: Sendable, Equatable {
+    public let name: String
+    public let albedoImageIndex: Int?
+    public let metallicFactor: Float
+    public let roughnessFactor: Float
+    public let normalImageIndex: Int?
+    public let aoImageIndex: Int?
+    public let emissiveImageIndex: Int?
+    public init(name: String, albedoImageIndex: Int?, metallicFactor: Float, roughnessFactor: Float,
+                normalImageIndex: Int? = nil, aoImageIndex: Int? = nil, emissiveImageIndex: Int? = nil) {
+        self.name = name
+        self.albedoImageIndex = albedoImageIndex
+        self.metallicFactor = metallicFactor
+        self.roughnessFactor = roughnessFactor
+        self.normalImageIndex = normalImageIndex
+        self.aoImageIndex = aoImageIndex
+        self.emissiveImageIndex = emissiveImageIndex
     }
 }
