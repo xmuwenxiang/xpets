@@ -1,5 +1,6 @@
 import Foundation
 import AppKit
+import simd
 import DPFoundation
 import DPWindow
 import DPRenderer
@@ -28,13 +29,44 @@ public final class Scene {
     }
 }
 
-/// Camera — Phase 1 only stores an orthographic-ish identity transform.
+/// Camera — view + perspective projection. Phase 2b adds the matrices;
+/// Phase 1 only stored position/target.
 public final class Camera {
     public var position: Float3
     public var target: Float3
-    public init(position: Float3 = SIMD3(0, 0, 5), target: Float3 = SIMD3(0, 0, 0)) {
+    public var fovY: Float
+    public var nearZ: Float
+    public var farZ: Float
+
+    public init(position: Float3 = SIMD3(0, 0, 5), target: Float3 = SIMD3(0, 0, 0),
+                fovY: Float = .pi / 4, nearZ: Float = 0.1, farZ: Float = 100) {
         self.position = position
         self.target = target
+        self.fovY = fovY
+        self.nearZ = nearZ
+        self.farZ = farZ
+    }
+
+    public func viewMatrix() -> simd_float4x4 {
+        let f = simd_normalize(target - position)           // forward (eye→target)
+        let s = simd_normalize(simd_cross(f, SIMD3(0, 1, 0))) // right
+        let u = simd_cross(s, f)                            // true up
+        var m = simd_float4x4()
+        m.columns.0 = SIMD4<Float>(s.x, u.x, -f.x, 0)
+        m.columns.1 = SIMD4<Float>(s.y, u.y, -f.y, 0)
+        m.columns.2 = SIMD4<Float>(s.z, u.z, -f.z, 0)
+        m.columns.3 = SIMD4<Float>(-simd_dot(s, position), -simd_dot(u, position), simd_dot(f, position), 1)
+        return m
+    }
+
+    public func projectionMatrix(aspect: Float) -> simd_float4x4 {
+        let f = 1 / tan(fovY / 2)
+        var m = simd_float4x4()
+        m.columns.0 = SIMD4<Float>(f / aspect, 0, 0, 0)
+        m.columns.1 = SIMD4<Float>(0, f, 0, 0)
+        m.columns.2 = SIMD4<Float>(0, 0, farZ / (nearZ - farZ), -1)
+        m.columns.3 = SIMD4<Float>(0, 0, (nearZ * farZ) / (nearZ - farZ), 0)
+        return m
     }
 }
 
