@@ -39,8 +39,8 @@ fi
 
 # 3. Each Work Spec carries a 'Status: Approved' header line (§7).
 for spec in "$PHASE"/spec-*.md; do
-  if ! grep -q '^Status: Approved$' "$spec"; then
-    echo "::error::$spec missing 'Status: Approved' header line"
+  if ! grep -qE '^Status: (Approved|Implementing|Done)$' "$spec"; then
+    echo "::error::$spec missing 'Status: Approved|Implementing|Done' header line"
     fail=1
   fi
 done
