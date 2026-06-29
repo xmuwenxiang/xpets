@@ -24,10 +24,10 @@
 
 > Phase-2 owner (Rendering team) attests that the Phase-1 Foundation contracts (`spec-001-bootstrap`, `spec-002-window`, `spec-003-runtime`, `spec-004-asset`, `spec-005-animation`, `spec-006-profiler`) are sufficient to begin Phase-2 Work Spec authoring.
 
-- Name: ______________________________
+- Name: zhangwenxiang
 - Role: Phase-2 owner (TBD by org)
-- Date: ______-______-______
-- Signature: ______________________________
+- Date: 2026-06-28
+- Signature: zhangwenxiang
 
 ### 2.2 Project owner sign-off
 
@@ -35,8 +35,8 @@
 
 - Name: Xavier Zhang
 - Role: Project owner
-- Date: ______-______-______
-- Signature: ______________________________
+- Date: 2026-06-29
+- Signature:  Xavier Zhang
 
 > ⚠️ **AI does NOT sign on the owner's behalf**. AI-edits to this block are flagged in CI via `git diff` regex check — only a direct edit by a project-owner-controlled key passes the phase-1-foundation tag application gate.
 
