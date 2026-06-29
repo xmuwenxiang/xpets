@@ -13,6 +13,13 @@
 | "first pass becomes `RenderPass.ID.root`" | `RenderPassId.root` is a fixed static ID; `ClearPass` registers with `.root`. | Static `.root` is simpler and matches the spec's `RenderPass.ID.root` notation. |
 | `RenderPass.ID` (spec notation) | `RenderPassId` (Swift type name). | Swift naming convention; the spec's dotted notation is conceptual. |
 
+### Accepted gaps (not test-asserted)
+
+| Spec acceptance row | Reality | Rationale |
+|---|---|---|
+| spec-001 §5 row 6 — "`MTLDevice` reference count in process = 1 (asserted via `gpuCount` test fixture)" | No `gpuCount` fixture exists. The invariant holds **by construction**: `Renderer` never calls `MTLCreateSystemDefaultDevice` (it receives the device via `attach(device:)`); the only such call in the codebase is in `Application.run`. Verifiable by `grep -rn MTLCreateSystemDefaultDevice desktop-pet-core/Sources` (single hit), not by a runtime refcount test. | Process-level `MTLDevice` refcount is not introspectable from Swift without invasive plumbing; the structural guarantee + grep check is the pragmatic gate. Not CI-test-asserted. |
+| spec-001 §5 — "`Counter(name: gpuLabel, value: gpuMs)`" | `counterSink` is called with `value: 0` (not measured `gpuMs`). | Real GPU-time (`gpuStartTime`/`gpuEndTime`) instrumentation is a Phase-6 hook per the Phase-1 `Phase1Renderer.renderFrame` comment; spec-001 records the dispatch signal (name) only. Value wiring lands with Phase 6 GPU-time readout. |
+
 ## Acceptance evidence (local M4 baselines)
 
 | spec | item # | command | recorded | status |
