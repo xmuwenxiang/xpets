@@ -21,6 +21,25 @@ final class GLBDecoderTests: XCTestCase {
         XCTAssertThrowsError(try GLBDecoder.decode(data: data))
     }
 
+    func testDecodeFixture_parsesGeometry() throws {
+        let asset = try GLBDecoder.decode(url: testFixtureURL())
+        XCTAssertEqual(asset.mesh.positions.count, asset.mesh.vertexCount,
+                       "positions count must equal vertexCount")
+        XCTAssertEqual(asset.mesh.texcoords.count, asset.mesh.vertexCount,
+                       "texcoords count must equal vertexCount")
+        XCTAssertGreaterThan(asset.mesh.positions.count, 0, "positions must be non-empty")
+        XCTAssertGreaterThan(asset.mesh.texcoords.count, 0, "texcoords must be non-empty")
+        // Indices are optional in glTF; fox.glb uses non-indexed geometry.
+        // When present, count must match indexCount; when absent, both are 0.
+        if asset.mesh.indexCount > 0 {
+            XCTAssertGreaterThan(asset.mesh.indices.count, 0, "indices must be non-empty when indexCount>0")
+            XCTAssertEqual(asset.mesh.indices.count, asset.mesh.indexCount,
+                           "indices count must equal indexCount")
+        } else {
+            XCTAssertEqual(asset.mesh.indices.count, 0, "indices must be empty when indexCount is 0")
+        }
+    }
+
     private func testFixtureURL() -> URL {
         // Bundle.module exposes the test target's resources directory if any.
         // Ponytail: the canonical fixture location is `Tests/DPAssetTests/Fixtures/fox.glb`,

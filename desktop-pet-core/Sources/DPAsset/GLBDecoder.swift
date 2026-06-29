@@ -152,6 +152,16 @@ public enum GLBDecoder {
                 mesh.jointIndices = try readJointIndices(accessorIndex: jointsAccIdx, accessors: accessors, bufferViews: bufferViews, bin: bin, vertexCount: mesh.vertexCount)
                 mesh.jointWeights = try readJointWeights(accessorIndex: weightsAccIdx, accessors: accessors, bufferViews: bufferViews, bin: bin, vertexCount: mesh.vertexCount)
             }
+
+            if let posIdx = attrs["POSITION"] as? Int, posIdx < accessors.count {
+                mesh.positions = try readPositions(accessorIndex: posIdx, accessors: accessors, bufferViews: bufferViews, bin: bin, vertexCount: mesh.vertexCount)
+            }
+            if let uvIdx = attrs["TEXCOORD_0"] as? Int, uvIdx < accessors.count {
+                mesh.texcoords = try readTexcoords(accessorIndex: uvIdx, accessors: accessors, bufferViews: bufferViews, bin: bin, vertexCount: mesh.vertexCount)
+            }
+            if let idxAcc = prim["indices"] as? Int, idxAcc < accessors.count {
+                mesh.indices = try readIndices(accessorIndex: idxAcc, accessors: accessors, bufferViews: bufferViews, bin: bin)
+            }
         }
 
         // -------- Animations --------
@@ -296,6 +306,60 @@ public enum GLBDecoder {
             let c = bin.loadF(at: pos+8)
             let d = bin.loadF(at: pos+12)
             out.append(SIMD4<Float>(a, b, c, d))
+            pos += stride
+        }
+        return out
+    }
+
+    private static func readPositions(accessorIndex: Int, accessors: [[String: Any]], bufferViews: [[String: Any]], bin: Data, vertexCount: Int) throws -> [SIMD3<Float>] {
+        guard accessorIndex < accessors.count,
+              let bvIdx = accessors[accessorIndex]["bufferView"] as? Int else {
+            return Array(repeating: SIMD3<Float>(0,0,0), count: vertexCount)
+        }
+        let bv = bufferViews[bvIdx]
+        let offset = (bv["byteOffset"] as? Int) ?? 0
+        var out: [SIMD3<Float>] = []
+        var pos = offset
+        for _ in 0..<vertexCount {
+            if pos + 12 > bin.count { break }
+            out.append(SIMD3<Float>(bin.loadF(at: pos), bin.loadF(at: pos+4), bin.loadF(at: pos+8)))
+            pos += 12
+        }
+        return out
+    }
+
+    private static func readTexcoords(accessorIndex: Int, accessors: [[String: Any]], bufferViews: [[String: Any]], bin: Data, vertexCount: Int) throws -> [SIMD2<Float>] {
+        guard accessorIndex < accessors.count,
+              let bvIdx = accessors[accessorIndex]["bufferView"] as? Int else {
+            return Array(repeating: SIMD2<Float>(0,0), count: vertexCount)
+        }
+        let bv = bufferViews[bvIdx]
+        let offset = (bv["byteOffset"] as? Int) ?? 0
+        var out: [SIMD2<Float>] = []
+        var pos = offset
+        for _ in 0..<vertexCount {
+            if pos + 8 > bin.count { break }
+            out.append(SIMD2<Float>(bin.loadF(at: pos), bin.loadF(at: pos+4)))
+            pos += 8
+        }
+        return out
+    }
+
+    private static func readIndices(accessorIndex: Int, accessors: [[String: Any]], bufferViews: [[String: Any]], bin: Data) throws -> [UInt32] {
+        guard accessorIndex < accessors.count else { return [] }
+        let acc = accessors[accessorIndex]
+        guard let bvIdx = acc["bufferView"] as? Int, bvIdx < bufferViews.count else { return [] }
+        let bv = bufferViews[bvIdx]
+        let offset = (bv["byteOffset"] as? Int) ?? 0
+        let cnt = (acc["count"] as? Int) ?? 0
+        let componentType = (acc["componentType"] as? Int) ?? 5123
+        let stride = componentType == 5125 ? 4 : 2   // 5125=uint32, 5123=uint16
+        var out: [UInt32] = []
+        var pos = offset
+        for _ in 0..<cnt {
+            if pos + stride > bin.count { break }
+            if componentType == 5125 { out.append(bin.loadU32(at: pos)) }
+            else { out.append(UInt32(bin.loadU16(at: pos))) }
             pos += stride
         }
         return out
