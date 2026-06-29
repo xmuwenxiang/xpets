@@ -41,3 +41,7 @@ pets-models/*.glb
 *.tmp
 *.temp
 .last-commit-message.txt
+
+# Local CI-helper script used during cross-ref audit; not part of project
+# contract. Mirrors the python block in .github/workflows/ci.yml.
+scripts/audit-adrs.py
