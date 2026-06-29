@@ -1,5 +1,5 @@
 <!--
-Status: Implementing
+Status: Done
 Phase: 2 — Rendering
 Owner: Xavier Zhang
 Depends: Phase 1 spec-001-bootstrap.md, spec-002-window.md, spec-003-runtime.md, spec-004-asset.md, spec-006-profiler.md
