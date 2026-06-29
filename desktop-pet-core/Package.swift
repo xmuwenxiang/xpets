@@ -101,7 +101,7 @@ let package = Package(
         ),
         .testTarget(
             name: "DPAssetTests",
-            dependencies: ["DPAsset", "DPFoundation"],
+            dependencies: ["DPAsset", "DPRenderer", "DPFoundation"],
             path: "Tests/DPAssetTests",
             resources: [
                 .copy("Fixtures")
