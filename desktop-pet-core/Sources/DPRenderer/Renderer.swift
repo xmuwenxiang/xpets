@@ -65,27 +65,17 @@ public final class Phase1Renderer: NSObject, RendererSurface, MTKViewDelegate {
 
     public func renderFrame(into view: MTKView, dt: Double) {
         guard prepared else { return }
-        passGraph.tick(dt: dt, into: nil)
         guard let queue = commandQueue,
               let buffer = queue.makeCommandBuffer(),
-              let pass = view.currentRenderPassDescriptor else {
-            return
-        }
-        pass.colorAttachments[0].loadAction = .clear
-        // ponytail: Phase 1 ships a *visible* color while the GLB mesh stays unloaded;
-        // conf is alpha=1 the moment we attach, so the user sees the window exists.
-        // Phase 2 replaces this with the unlit skinning pass; here we just want
-        // visual confirmation the OSR / always-on-top / click-through window is up.
-        pass.colorAttachments[0].clearColor = MTLClearColor(red: 0.20, green: 0.55, blue: 0.85, alpha: 1.0)
-        guard let encoder = buffer.makeRenderCommandEncoder(descriptor: pass) else { return }
+              let rpd = view.currentRenderPassDescriptor else { return }
+        rpd.colorAttachments[0].loadAction = .clear
+        rpd.colorAttachments[0].clearColor = MTLClearColor(red: 0.20, green: 0.55, blue: 0.85, alpha: 1.0)
+        guard let encoder = buffer.makeRenderCommandEncoder(descriptor: rpd) else { return }
+        // Single tick: frameIndex++ + counters + encode registered passes (fox draw).
+        passGraph.tick(dt: dt, into: encoder)
         encoder.endEncoding()
-        if let drawable = view.currentDrawable {
-            buffer.present(drawable)
-        }
-        // Phase 6 reads GPU time from `gpuStartTime`/`gpuEndTime`. For Phase 1 the
-        // completed handler intentionally is empty; commit before adding the handler
-        // would assert. Hand-off order: handler attached BEFORE commit.
-        buffer.addCompletedHandler { _ in /* Phase 6: read GPU time */ }
+        if let drawable = view.currentDrawable { buffer.present(drawable) }
+        buffer.addCompletedHandler { _ in }
         buffer.commit()
         frameCount += 1
     }
