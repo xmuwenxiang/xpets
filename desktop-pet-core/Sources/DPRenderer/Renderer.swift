@@ -211,9 +211,9 @@ public final class Renderer: @unchecked Sendable {
     }
 
     /// Advance one frame. Increments currentFrameIndex, flips isRunning, drains
-    /// pending removals, encodes passes into `commandBuffer` if provided, emits
+    /// pending removals, encodes passes into `encoder` if provided, emits
     /// a Counter per pass via `counterSink`, and drops any pass that threw.
-    public func tick(dt: Double, into commandBuffer: MTLCommandBuffer? = nil) {
+    public func tick(dt: Double, into encoder: MTLRenderCommandEncoder? = nil) {
         if !pendingRemovals.isEmpty {
             passes.removeAll { pendingRemovals.contains($0.id) }
             pendingRemovals.removeAll()
@@ -221,8 +221,8 @@ public final class Renderer: @unchecked Sendable {
         currentFrameIndex &+= 1
         isRunning = true
         for box in passes {
-            if let cb = commandBuffer {
-                do { _ = try box.encode(into: cb) }
+            if let enc = encoder {
+                do { _ = try box.encode(into: enc) }
                 catch { pendingDrops.insert(box.id) }
             }
             counterSink?(box.gpuLabel, 0)

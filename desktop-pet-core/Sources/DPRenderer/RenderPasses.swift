@@ -9,5 +9,5 @@ public final class ClearPass: RenderPass {
     public let id: RenderPassId = .root
     public var gpuLabel: String { "clear" }
     public init() {}
-    public func encode(into commandBuffer: MTLCommandBuffer, context: Void) throws -> RenderPassId { id }
+    public func encode(into encoder: MTLRenderCommandEncoder, context: Void) throws -> RenderPassId { id }
 }

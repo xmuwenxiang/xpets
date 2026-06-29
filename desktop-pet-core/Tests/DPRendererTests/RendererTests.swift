@@ -19,7 +19,7 @@ private final class TestPass: RenderPass {
     let id: RenderPassId
     var gpuLabel: String { "test.\(id.raw)" }
     init(_ raw: String) { self.id = RenderPassId(raw) }
-    func encode(into commandBuffer: MTLCommandBuffer, context: Void) throws -> RenderPassId { id }
+    func encode(into encoder: MTLRenderCommandEncoder, context: Void) throws -> RenderPassId { id }
 }
 
 final class RendererRegistryTests: XCTestCase {

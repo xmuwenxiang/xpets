@@ -16,10 +16,10 @@ public protocol RenderPass: AnyObject {
     associatedtype Context
     var id: RenderPassId { get }
     var gpuLabel: String { get }
-    /// Encode into the given command buffer. Throwing here is caught by the
+    /// Encode into the given render command encoder. Throwing here is caught by the
     /// Renderer: the pass is dropped after the frame and ticking continues
     /// (Loop-survives invariant, Phase-1 spec-003 §5).
-    func encode(into commandBuffer: MTLCommandBuffer, context: Context) throws -> RenderPassId
+    func encode(into encoder: MTLRenderCommandEncoder, context: Context) throws -> RenderPassId
 }
 
 /// Type-erased RenderPass. Holds the pass and its captured context; exposes a
@@ -27,15 +27,15 @@ public protocol RenderPass: AnyObject {
 public final class AnyRenderPass: @unchecked Sendable {
     public let id: RenderPassId
     public let gpuLabel: String
-    private let _encode: (MTLCommandBuffer) throws -> RenderPassId
+    private let _encode: (MTLRenderCommandEncoder) throws -> RenderPassId
 
     public init<P: RenderPass>(_ pass: P, context: P.Context) {
         self.id = pass.id
         self.gpuLabel = pass.gpuLabel
-        self._encode = { commandBuffer in try pass.encode(into: commandBuffer, context: context) }
+        self._encode = { encoder in try pass.encode(into: encoder, context: context) }
     }
 
-    public func encode(into commandBuffer: MTLCommandBuffer) throws -> RenderPassId {
-        try _encode(commandBuffer)
+    public func encode(into encoder: MTLRenderCommandEncoder) throws -> RenderPassId {
+        try _encode(encoder)
     }
 }

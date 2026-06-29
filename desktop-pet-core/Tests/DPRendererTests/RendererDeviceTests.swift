@@ -10,6 +10,19 @@ final class RendererDeviceTests: XCTestCase {
         )
     }
 
+    private func makeEncoder(device: MTLDevice, queue: MTLCommandQueue, size: (Int, Int) = (64, 64)) -> (MTLCommandBuffer, MTLRenderCommandEncoder) {
+        let texDesc = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .bgra8Unorm, width: size.0, height: size.1, mipmapped: false)
+        texDesc.usage = [.renderTarget]
+        let tex = device.makeTexture(descriptor: texDesc)!
+        let rpd = MTLRenderPassDescriptor()
+        rpd.colorAttachments[0].texture = tex
+        rpd.colorAttachments[0].loadAction = .dontCare
+        rpd.colorAttachments[0].storeAction = .store
+        let buffer = queue.makeCommandBuffer()!
+        let enc = buffer.makeRenderCommandEncoder(descriptor: rpd)!
+        return (buffer, enc)
+    }
+
     /// Encode order matches registered order. A TestPass appends its id to a
     /// shared recorder when encode is invoked.
     func testEncodeOrderMatchesRegisteredOrder() throws {
@@ -24,7 +37,7 @@ final class RendererDeviceTests: XCTestCase {
             var gpuLabel: String { "rec.\(id.raw)" }
             private let recorder: Recorder
             init(_ raw: String, recorder: Recorder) { self.id = RenderPassId(raw); self.recorder = recorder }
-            func encode(into commandBuffer: MTLCommandBuffer, context: Recorder) throws -> RenderPassId {
+            func encode(into encoder: MTLRenderCommandEncoder, context: Recorder) throws -> RenderPassId {
                 context.order.append(id); return id
             }
         }
@@ -34,8 +47,9 @@ final class RendererDeviceTests: XCTestCase {
         try r.registerPass(RecordingPass("A", recorder: recorder), context: recorder)
         try r.registerPass(RecordingPass("B", recorder: recorder), context: recorder)
         try r.registerPass(RecordingPass("C", recorder: recorder), context: recorder)
-        let buffer = queue.makeCommandBuffer()!
-        r.tick(dt: 1.0 / 60.0, into: buffer)
+        let (buffer, enc) = makeEncoder(device: device, queue: queue)
+        r.tick(dt: 1.0 / 60.0, into: enc)
+        enc.endEncoding()
         buffer.commit()
         XCTAssertEqual(recorder.order, [RenderPassId("A"), RenderPassId("B"), RenderPassId("C")])
     }
@@ -53,25 +67,27 @@ final class RendererDeviceTests: XCTestCase {
             typealias Context = Void
             let id = RenderPassId("boom")
             var gpuLabel: String { "boom" }
-            func encode(into commandBuffer: MTLCommandBuffer, context: Void) throws -> RenderPassId { throw Boom.boom }
+            func encode(into encoder: MTLRenderCommandEncoder, context: Void) throws -> RenderPassId { throw Boom.boom }
         }
         final class OKPass: RenderPass {
             typealias Context = Void
             let id = RenderPassId("ok")
             var gpuLabel: String { "ok" }
-            func encode(into commandBuffer: MTLCommandBuffer, context: Void) throws -> RenderPassId { id }
+            func encode(into encoder: MTLRenderCommandEncoder, context: Void) throws -> RenderPassId { id }
         }
         let r = Renderer(device: device)
         try r.registerPass(ThrowingPass(), context: ())
         try r.registerPass(OKPass(), context: ())
         // Frame 1: boom throws → dropped after frame; ok survives.
-        let b1 = queue.makeCommandBuffer()!
-        r.tick(dt: 1.0 / 60.0, into: b1)
+        let (b1, enc1) = makeEncoder(device: device, queue: queue)
+        r.tick(dt: 1.0 / 60.0, into: enc1)
+        enc1.endEncoding()
         b1.commit()
         XCTAssertEqual(r.registeredPassIDs, [RenderPassId("ok")])
         // Frame 2: loop survives, ok still ticks.
-        let b2 = queue.makeCommandBuffer()!
-        r.tick(dt: 1.0 / 60.0, into: b2)
+        let (b2, enc2) = makeEncoder(device: device, queue: queue)
+        r.tick(dt: 1.0 / 60.0, into: enc2)
+        enc2.endEncoding()
         b2.commit()
         XCTAssertEqual(r.currentFrameIndex, 2)
         XCTAssertEqual(r.registeredPassIDs, [RenderPassId("ok")])
@@ -89,16 +105,17 @@ final class RendererDeviceTests: XCTestCase {
             typealias Context = Void
             let id = RenderPassId("noop")
             var gpuLabel: String { "noop" }
-            func encode(into commandBuffer: MTLCommandBuffer, context: Void) throws -> RenderPassId { id }
+            func encode(into encoder: MTLRenderCommandEncoder, context: Void) throws -> RenderPassId { id }
         }
         let r = Renderer(device: device)
         try r.registerPass(NoopPass(), context: ())
         var samples: [Double] = []
         samples.reserveCapacity(600)
         for _ in 0..<600 {
-            let buffer = queue.makeCommandBuffer()!
+            let (buffer, enc) = makeEncoder(device: device, queue: queue)
             let start = CFAbsoluteTimeGetCurrent()
-            r.tick(dt: 1.0 / 60.0, into: buffer)
+            r.tick(dt: 1.0 / 60.0, into: enc)
+            enc.endEncoding()
             buffer.commit()
             samples.append((CFAbsoluteTimeGetCurrent() - start) * 1000.0)
         }
