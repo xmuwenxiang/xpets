@@ -1,7 +1,7 @@
 <!--
-Status: Draft
+Status: Approved
 Phase: 2 — Rendering
-Owner: TBD
+Owner: Xavier Zhang
 Depends: Phase 1 spec-001-bootstrap.md, spec-002-window.md, spec-003-runtime.md, spec-004-asset.md, spec-006-profiler.md
 ADRs:   D-005 (Phase 5 split), D-008 (Continuous Profiling budget line), D-013 (4-category Acceptance)
 -->
@@ -68,7 +68,7 @@ Provide a Metal-backed renderer with Pass registration, GPU-time sampling, and s
 ### Performance metric
 
 - `Renderer.tick(_:)` wall-clock cost **≤ 4 ms** at 60 FPS with 6 Passes registered (CPU-side budget, excludes GPU pass cost).
-- Per-Pass GPU-time percentile P99 over 600-frame window is logged via `Profiler`; CI asserts P99 ≤ (TBD ms per Pass) — placeholder threshold, finalized at Phase 2 kickoff.
+- Per-Pass GPU-time percentile P99 over 600-frame window is logged via `Profiler`; for the backbone no-op Pass (dispatch overhead only) CI asserts P99 ≤ 0.5 ms. Heavy passes (Material / Lighting / Shadow / HDR) carry their own per-spec P99 budgets and are exempt from this generic ceiling.
 - Profiler `.everyFrame` overhead remains ≤ 0.5 ms / frame (Phase 1 row 24 regression) when a Pass emits a `Counter`.
 
 ### Enumerable use case

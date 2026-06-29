@@ -1,7 +1,7 @@
 <!--
-Status: Draft
+Status: Approved
 Phase: 2 — Rendering
-Owner: TBD
+Owner: Xavier Zhang
 Depends: Phase 2 spec-001-metal-renderer.md, spec-002-material-pbr.md
 ADRs:   D-008 (Profiler budget), D-013
 -->

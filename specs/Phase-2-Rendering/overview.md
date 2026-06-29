@@ -1,6 +1,6 @@
 # Phase 2 — Rendering
 
-> **Status**: Stub → **Drafts authored (2026-06-28)**. Five Work Specs now exist at Apple Style + 4-category Acceptance; none has entered `In Review`. Implementation does not begin until owner review + `Status: Approved` per `00-spec-conventions.md` §7.
+> **Status**: **Approved (2026-06-29)**. Five Work Specs at Apple Style + 4-category Acceptance, owner-reviewed. Implementation may begin per `00-spec-conventions.md` §7; execution plan in [`execution-plan.md`](execution-plan.md).
 > **Goal**: Bring up the Metal renderer with PBR materials, lighting (Directional / IBL), Shadow, Camera, HDR Environment.
 > **Primary Output**: The same fox from Phase 1, now self-renders with physical realism — projected, reflective, rotatable, HDR-aware.
 
@@ -56,21 +56,46 @@ None required from Phase 2 (Phase 3 / Phase 4 own it per D-003).
 
 ---
 
-## Risk (placeholder — to be expanded)
+## Risk
 
-- Metal Performance Shader compatibility on Apple Silicon
-- IBL specular resolution vs frame budget
-- Shadow acne with PBR materials
-- Camera coordinate convention vs Phase 5 Desktop Space — addressed via the render-route decision documented in Phase 5a overview (D-005 lays out the 5a/5b split; the individual render-route sub-decision is left open until Phase 5a content authoring begins)
+- **MPS compatibility on Apple Silicon** — Phase 2 ships hand-written Metal shaders; MPS is not on the critical path. If a later spec pulls in MPS, gate on `macos-14` runner only.
+- **IBL specular resolution vs frame budget** — pre-filtered mip chain generated once at boot (async on a background `DispatchQueue`, synthetic-gradient fallback for the first frame); steady-state probe is cached, not rebuilt per frame (spec-003 §4).
+- **Shadow acne on PBR low-roughness surfaces** — `biasMode = .slopeScaled` is the Phase-2 default; PBR shader reads bias from `ShadowConfig` (spec-004 §4).
+- **Camera coordinate convention vs Phase 5 Desktop Space** — world-relative light direction stored as `SIMD3<Float>`; renderer recomputes view-projection on resize. The render-route sub-decision (offscreen-compositor vs direct-on-window) is owned by Phase 5a per D-005; Phase 2 only governs the renderer surface, not the route.
 
 ---
 
-## Acceptance (placeholder — to be expanded using 4 categories)
+## Acceptance
 
-- Fox self-renders with PBR realism
-- HDR pipeline active with Tone Mapping
-- Shadow cast onto ground plane
-- Camera control stable across 60 s
+> Distilled from the 5 Work Specs; full per-item table in [`acceptance.md`](acceptance.md). 4-category form per D-013.
+
+### Performance metric
+
+- `Renderer.tick(_:)` CPU ≤ 4 ms @ 60 FPS with 6 Passes registered (spec-001).
+- no-op Pass GPU P99 ≤ 0.5 ms over 600-frame window (spec-001 backbone overhead); heavy passes carry per-spec P99 budgets (Lighting ≤ 1.5 ms, Shadow ≤ 2.5 ms, HDR ≤ 1.2 ms).
+- Profiler `.everyFrame` overhead ≤ 0.5 ms / frame through Phase 2 (Phase-1 row 24 regression).
+- Cumulative Phase-2 memory ≤ 128 MB worst-case (65 baseline + Renderer 15 + Material 6 + Lighting 6 + Shadow 24 + HDR 12).
+
+### Enumerable use case
+
+- Register 4 passes → order `[root, A, B, C, D]`; unregister `B` → `[root, A, C, D]` (spec-001).
+- Material index `0` vs `1` → render differs at ≥ 5 % mean-L2 (spec-002).
+- DirLight rotated 90° around Y → specular highlight follows (spec-003).
+- 1 / 2 / 4 cascade × 512 / 2048 / 2048 → shadow coverage / sharpness / no `MTLTexture` reallocation in 60-frame run (spec-004).
+- `toneMapper = .acesFilmic` vs `.none` → clipped bright-edge band; `exposure = 0.5` vs `1.0` ΔE ≥ 3 (spec-005).
+
+### Assertable state
+
+- `Renderer.currentFrameIndex == 0` at init, +1 per `tick`; `MTLDevice` in-process count == 1 (spec-001).
+- `Material.fromGlb(i)` pure (== on repeat); `missingChannel` throws; texture cache `.hit` on second render (spec-002).
+- `LightingState` `Sendable`; IBL probe cached `==`; `noLightsDuringIBLFallback` fires in strict mode only (spec-003).
+- `MTLTexture.arrayLength == cascadeCount`; `invalidCascadeCount` throws at registration; `ContactShadowToggle.enable = true` zero side-effect (spec-004).
+- `HDRConfig.toneMapper` `Codable` round-trip; `BloomPass.register()` does not mutate pass-order list; black scene → canvas max-Y == 0 (spec-005).
+
+### Previous-Phase regression
+
+- All Phase-1 `acceptance.md` rows 1..31 still pass — re-run `swift test` + CI green.
+- Memory baseline ≤ 65 MB must not exceed 80 MB after spec-001 (≤ 15 MB Renderer ceiling); cumulative ≤ 128 MB at Phase-2 close.
 
 ---
 

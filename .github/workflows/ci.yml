@@ -119,6 +119,12 @@ jobs:
           print(f'All {len(ids)} ADR IDs in index resolve to real files.')
           PY
 
+      - name: Phase 2 spec lint (no TBD, Approved status, 4-category)
+        run: |
+          set -euo pipefail
+          chmod +x scripts/phase2-spec-lint.sh
+          ./scripts/phase2-spec-lint.sh
+
       - name: Profiler perf budget (acceptance row 24 — ≤ 0.5 ms overhead)
         # The corresponding Swift test in DPProfilerTests asserts the budget at runtime;
         # this CI step surfaces a failed assertion explicitly rather than letting it

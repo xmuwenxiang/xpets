@@ -1,7 +1,7 @@
 <!--
-Status: Draft
+Status: Approved
 Phase: 2 — Rendering
-Owner: TBD
+Owner: Xavier Zhang
 Depends: Phase 2 spec-001-metal-renderer.md, Phase 1 spec-004-asset.md (GLB decoder)
 ADRs:   D-004 (Skeleton + Animation embedded in .glb), D-008 (Profiler budget), D-013
 -->
